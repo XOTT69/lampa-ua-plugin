@@ -1,29 +1,29 @@
 (function() {
     'use strict';
     
-    // Реєструємо компонент UA Online
+    // Іконка "HOT" (SVG текст)
+    var hot_icon = '<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="20" fill="#FF4757"/><text x="50" y="65" font-family="Arial, sans-serif" font-size="45" font-weight="bold" fill="white" text-anchor="middle">HOT</text></svg>';
+
     var ua_component = {
         title: 'UA Online',
         component: 'uaonline',
-        icon: '<svg viewBox="0 0 512 512" fill="#fff"><path d="M256 0c141.4 0 256 114.6 256 256S397.4 512 256 512 0 397.4 0 256 114.6 0 256 0z" fill="#0057b7"/><path d="M0 256h512v256H0z" fill="#ffd700"/></svg>',
+        icon: hot_icon,
         on: function() {
-            var network = new Lampa.Reguest();
-            var items = [];
-            var urls = [
+            var items = [
                 {t:'UAKino', u:'https://uakino.cx/'}, 
                 {t:'UAFLIX', u:'https://uafix.net/'},
-                {t:'Kinoukr', u:'https://kinoukr.tv/'}
+                {t:'Kinoukr', u:'https://kinoukr.tv/'},
+                {t:'UASerials', u:'https://uaserials.com/'}
             ];
             
-            // Показуємо список сайтів для пошуку
-            var html = Lampa.List(urls.map(u => ({
-                title: 'Пошук на ' + u.t,
+            var html = Lampa.List(items.map(u => ({
+                title: u.t,
                 url: u.u,
                 component: 'ua_search'
             })), {
                 on_select: (item) => {
                     Lampa.Input.edit({
-                        title: 'Пошук на ' + item.title,
+                        title: 'Пошук ' + item.title,
                         value: '',
                         free: true,
                         nosave: true
@@ -31,7 +31,7 @@
                         Lampa.Activity.push({
                             url: item.url,
                             title: 'Пошук: ' + query,
-                            component: 'browser', // Відкриємо вбудований браузер поки що
+                            component: 'browser',
                             page: 1
                         });
                         Lampa.Browser.open({ url: item.url + '?s=' + encodeURIComponent(query) });
@@ -42,12 +42,12 @@
         }
     };
 
-    // Додаємо пункт в ГОЛОВНЕ МЕНЮ
+    // Додаємо в меню з назвою "UA Online" та іконкою "HOT"
     function addMenu() {
         if ($('.menu .menu__item[data-action=uaonline]').length) return;
         
         var item = $(`<div class="menu__item selector" data-action="uaonline">
-            <div class="menu__ico">${ua_component.icon}</div>
+            <div class="menu__ico" style="width:30px; height:30px;">${hot_icon}</div>
             <div class="menu__text">UA Online</div>
         </div>`);
 
@@ -60,10 +60,10 @@
             });
         });
 
-        $('.menu .menu__list').eq(0).append(item);
+        // Вставляємо ПІСЛЯ "Пошук" (індекс 1 або 2)
+        $('.menu .menu__list').eq(0).find('.menu__item').eq(1).after(item);
     }
 
-    // Запускаємо додавання
     if (window.appready) addMenu();
     else {
         Lampa.Listener.follow('app', function(e) {
@@ -71,8 +71,5 @@
         });
     }
     
-    // Реєструємо активність
     Lampa.Component.add('uaonline', ua_component);
-
-    Lampa.Noty.show('🔥 UA Online додано в меню!');
 })();
