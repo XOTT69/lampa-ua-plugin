@@ -1,8 +1,8 @@
 (function () {
     'use strict';
 
-    if (window.ua_online_msx) return;
-    window.ua_online_msx = true;
+    if (window.ua_online_msx_v4) return;
+    window.ua_online_msx_v4 = true;
 
     var settings = {
         name: 'UA Online',
@@ -15,14 +15,55 @@
         ]
     };
 
-    function ready(fn) {
-        if (document.readyState !== 'loading') fn();
-        else document.addEventListener('DOMContentLoaded', fn);
+    function addButtonToCard() {
+        var box = document.querySelector('.full-start__buttons');
+        if (!box) return;
+
+        if (box.querySelector('.ua-online-btn')) return;
+
+        var titleEl = document.querySelector('.full__title');
+        var title = titleEl ? titleEl.textContent : '';
+
+        var btn = Lampa.Template.get('button', {
+            title: 'UA Online',
+            description: 'Пошук українською',
+            icon: settings.icon
+        });
+
+        btn.classList.add('ua-online-btn');
+
+        btn.addEventListener('click', function () {
+            Lampa.Input.edit({
+                title: 'Пошук UA',
+                value: title,
+                free: true,
+                nosave: true
+            }, function (query) {
+                if (!query) return;
+
+                Lampa.Select.show({
+                    title: 'Де шукати?',
+                    items: settings.sources,
+                    onSelect: function (src) {
+                        Lampa.Browser.open({
+                            url: src.url + encodeURIComponent(query),
+                            title: src.title
+                        });
+                    }
+                });
+            });
+        });
+
+        box.appendChild(btn);
     }
 
-    function waitMenu() {
+    function watchCard() {
+        setInterval(addButtonToCard, 1000);
+    }
+
+    function addMenu() {
         var list = document.querySelector('.menu .menu__list');
-        if (!list) return setTimeout(waitMenu, 800);
+        if (!list) return setTimeout(addMenu, 1000);
 
         if (document.querySelector('[data-action="ua_mod"]')) return;
 
@@ -54,64 +95,21 @@
             });
         });
 
-        var search = document.querySelector('[data-action="search"]');
-        if (search && search.parentNode) search.parentNode.insertBefore(item, search.nextSibling);
-        else list.appendChild(item);
+        list.appendChild(item);
     }
 
-    function hookCard() {
-        Lampa.Listener.follow('full', function (e) {
-            if (e.type !== 'complete') return;
-            if (document.querySelector('.ua-online-btn')) return;
-
-            var box = document.querySelector('.full-start__buttons');
-            if (!box) return;
-
-            var title = (e.data.movie && e.data.movie.title) || (e.data.card && e.data.card.title) || '';
-
-            var btn = Lampa.Template.get('button', {
-                title: 'UA Online',
-                description: 'Пошук українською',
-                icon: settings.icon
-            });
-
-            btn.classList.add('ua-online-btn');
-
-            btn.addEventListener('click', function () {
-                Lampa.Input.edit({
-                    title: 'Пошук UA',
-                    value: title,
-                    free: true,
-                    nosave: true
-                }, function (query) {
-                    if (!query) return;
-
-                    Lampa.Select.show({
-                        title: 'Де шукати?',
-                        items: settings.sources,
-                        onSelect: function (src) {
-                            Lampa.Browser.open({
-                                url: src.url + encodeURIComponent(query),
-                                title: src.title
-                            });
-                        }
-                    });
-                });
-            });
-
-            box.appendChild(btn);
-        });
-    }
-
-    ready(function () {
+    function start() {
         if (!window.Lampa) return;
 
-        waitMenu();
-        hookCard();
+        addMenu();
+        watchCard();
 
         setTimeout(function () {
-            Lampa.Noty.show('UA Online MSX готовий');
+            Lampa.Noty.show('UA Online готовий');
         }, 1500);
-    });
+    }
+
+    if (document.readyState !== 'loading') start();
+    else document.addEventListener('DOMContentLoaded', start);
 
 })();
