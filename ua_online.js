@@ -1,8 +1,8 @@
 (function () {
     'use strict';
 
-    if (window.ua_online_msx_v4) return;
-    window.ua_online_msx_v4 = true;
+    if (window.ua_online_msx_final) return;
+    window.ua_online_msx_final = true;
 
     var settings = {
         name: 'UA Online',
@@ -15,13 +15,24 @@
         ]
     };
 
-    function addButtonToCard() {
-        var box = document.querySelector('.full-start__buttons');
-        if (!box) return;
+    function findPlayButton() {
+        var btns = document.querySelectorAll('button, .button, .selector');
 
-        if (box.querySelector('.ua-online-btn')) return;
+        for (var i = 0; i < btns.length; i++) {
+            var t = btns[i].innerText || '';
+            if (t.indexOf('Див') !== -1 || t.indexOf('Play') !== -1) return btns[i];
+        }
 
-        var titleEl = document.querySelector('.full__title');
+        return null;
+    }
+
+    function insertButton() {
+        if (document.querySelector('.ua-online-btn')) return;
+
+        var play = findPlayButton();
+        if (!play) return;
+
+        var titleEl = document.querySelector('.full__title,h1');
         var title = titleEl ? titleEl.textContent : '';
 
         var btn = Lampa.Template.get('button', {
@@ -54,62 +65,16 @@
             });
         });
 
-        box.appendChild(btn);
+        play.parentNode.insertBefore(btn, play.nextSibling);
     }
 
-    function watchCard() {
-        setInterval(addButtonToCard, 1000);
-    }
-
-    function addMenu() {
-        var list = document.querySelector('.menu .menu__list');
-        if (!list) return setTimeout(addMenu, 1000);
-
-        if (document.querySelector('[data-action="ua_mod"]')) return;
-
-        var item = document.createElement('div');
-        item.className = 'menu__item selector';
-        item.setAttribute('data-action', 'ua_mod');
-        item.innerHTML =
-            '<div class="menu__ico">' + settings.icon + '</div>' +
-            '<div class="menu__text">' + settings.name + '</div>';
-
-        item.addEventListener('click', function () {
-            Lampa.Select.show({
-                title: 'UA Online',
-                items: settings.sources,
-                onSelect: function (src) {
-                    Lampa.Input.edit({
-                        title: 'Пошук на ' + src.title,
-                        value: '',
-                        free: true,
-                        nosave: true
-                    }, function (query) {
-                        if (!query) return;
-                        Lampa.Browser.open({
-                            url: src.url + encodeURIComponent(query),
-                            title: src.title
-                        });
-                    });
-                }
-            });
-        });
-
-        list.appendChild(item);
-    }
-
-    function start() {
+    setInterval(function () {
         if (!window.Lampa) return;
+        insertButton();
+    }, 800);
 
-        addMenu();
-        watchCard();
-
-        setTimeout(function () {
-            Lampa.Noty.show('UA Online готовий');
-        }, 1500);
-    }
-
-    if (document.readyState !== 'loading') start();
-    else document.addEventListener('DOMContentLoaded', start);
+    setTimeout(function () {
+        if (window.Lampa) Lampa.Noty.show('UA Online активний');
+    }, 1500);
 
 })();
