@@ -92,6 +92,138 @@
       return url;
     }
 
+        // --- ПОЧАТОК УКРАЇНСЬКИХ ПАРСЕРІВ ---
+    function uakino(component, _object) {
+      var network = new Lampa.Reguest();
+      var extract = {};
+      var embed = 'https://uakino.one';
+      var object = _object;
+      var select_title = object.movie.title;
+
+      this.search = function (object, kinopoisk_id, data) {
+        var url = embed + '/index.php?do=search&subaction=search&story=' + encodeURIComponent(object.search);
+        network.native(url, function (str) {
+          str = str.replace(/\n/g, '');
+          var results = [];
+          // Парсинг результатів пошуку (DLE структура)
+          var items = str.match(/<div class="movie-item">.*?<\/div><\/div>/g);
+          if (!items) items = str.match(/<a class="short-item".*?<\/a>/g); // Альтернативний дизайн
+          
+          if (items) {
+            items.forEach(function (item) {
+              var url = item.match(/href="(.*?)"/)[1];
+              var title = item.match(/class="movie-title"[^>]*>(.*?)<\/div>/) || item.match(/class="short-item__title"[^>]*>(.*?)<\/div>/);
+              title = title ? title[1].trim() : 'UAKino Item';
+              var year = item.match(/class="movie-date"[^>]*>(.*?)<\/div>/) || item.match(/class="short-item__meta"[^>]*>(.*?)<\/div>/);
+              year = year ? parseInt(year[1]) : 0;
+              
+              results.push({
+                title: title,
+                year: year,
+                url: url,
+                source: 'uakino'
+              });
+            });
+          }
+
+          if (results.length) {
+             // Шукаємо найбільш точний збіг
+             var found = results[0]; // Беремо перший за замовчуванням
+             results.forEach(function(res){
+                 if(res.title.toLowerCase() === object.search.toLowerCase() && Math.abs(res.year - object.movie.year) < 2) found = res;
+             });
+             
+             // Отримуємо сторінку фільму
+             network.native(found.url, function(html){
+                 extractData(html);
+             }, function() { component.emptyForQuery(select_title); });
+          } else {
+             component.emptyForQuery(select_title);
+          }
+        }, function (a, c) {
+          component.emptyForQuery(select_title);
+        });
+      };
+
+      this.extendChoice = function (saved) {
+        Lampa.Arrays.extend(choice, saved, true);
+      };
+
+      this.destroy = function () {
+        network.clear();
+        extract = null;
+      };
+
+      function extractData(str) {
+        var items = [];
+        // Спроба знайти iframe плеєра (Ashdi/Moonwalk/etc)
+        var iframe = str.match(/<iframe[^>]+src="(.*?)"[^>]*>/);
+        if (iframe) {
+            var link = iframe[1];
+            // Виправляємо протокол якщо треба
+            if (link.indexOf('//') === 0) link = 'https:' + link;
+            
+            items.push({
+                title: 'Дивитись на UAKino (Плеєр)',
+                quality: '720p', // Умовна якість, бо це iframe
+                url: link,
+                stream: link // Lampa спробує відкрити це, можливо знадобиться Web-плеєр
+            });
+        }
+        
+        if (items.length) {
+            component.loading(false);
+            // Тут ми використовуємо простий append, бо складні фільтри не завжди потрібні для iframe
+            var filter_items = [{
+                title: 'UAKino',
+                items: items
+            }];
+             // Передаємо результат у Lampa
+            component.append(filter_items[0]); 
+        } else {
+            component.emptyForQuery(select_title);
+        }
+      }
+    }
+
+    function uaserials(component, _object) {
+      var network = new Lampa.Reguest();
+      var embed = 'https://uaserials.pro';
+      var object = _object;
+      var select_title = object.movie.title;
+
+      this.search = function (object, kinopoisk_id, data) {
+        var url = embed + '/search?q=' + encodeURIComponent(object.search);
+        network.native(url, function (str) {
+          str = str.replace(/\n/g, '');
+          var link_match = str.match(/<a[^>]+class="th-in"[^>]+href="(.*?)"/);
+          
+          if (link_match) {
+             network.native(link_match[1], function(html){
+                 var items = [];
+                 var iframe = html.match(/<iframe[^>]+src="(.*?)"/);
+                 if(iframe){
+                     items.push({
+                         title: 'UASerials (Web)',
+                         quality: 'HD',
+                         url: iframe[1],
+                         stream: iframe[1]
+                     });
+                     component.loading(false);
+                     component.append({title: 'UASerials', items: items});
+                 } else {
+                     component.emptyForQuery(select_title);
+                 }
+             }, function() { component.emptyForQuery(select_title); });
+          } else {
+             component.emptyForQuery(select_title);
+          }
+        }, function () { component.emptyForQuery(select_title); });
+      };
+      this.destroy = function () { network.clear(); };
+    }
+    // --- КІНЕЦЬ УКРАЇНСЬКИХ ПАРСЕРІВ ---
+
     function kinobaseMirror() {
       var url = Lampa.Storage.get('online_mod_kinobase_mirror', '') + '';
       if (!url) return 'https://kinobase.org';
