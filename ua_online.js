@@ -1,80 +1,62 @@
-(function () {
-    'use strict';
+(function(){
 
-    if (window.ua_online_msx_final) return;
-    window.ua_online_msx_final = true;
+    if(window.ua_online_context) return;
+    window.ua_online_context = true;
 
-    var settings = {
-        name: 'UA Online',
-        icon: '<svg viewBox="0 0 512 512" width="24" height="24"><rect width="512" height="512" rx="60" fill="#ff4757"/><path d="M150 350 L256 150 L362 350" stroke="white" stroke-width="40" fill="none"/></svg>',
-        sources: [
-            { title: 'UAKino', url: 'https://uakino.cx/?s=' },
-            { title: 'UAFLIX', url: 'https://uafix.net/?s=' },
-            { title: 'Kinoukr', url: 'https://kinoukr.tv/search/?story=' },
-            { title: 'UASerials', url: 'https://uaserials.com/?s=' }
-        ]
+    var sources = [
+        {title:'UAKino',url:'https://uakino.cx/?s='},
+        {title:'UAFLIX',url:'https://uafix.net/?s='},
+        {title:'Kinoukr',url:'https://kinoukr.tv/search/?story='},
+        {title:'UASerials',url:'https://uaserials.com/?s='}
+    ];
+
+    var orig = Lampa.Manifest.plugins.onContextMenu;
+
+    Lampa.Manifest.plugins.onContextMenu = function(object){
+
+        var menu = orig ? orig(object) : {};
+
+        menu.uaonline = {
+            name: 'UA Online',
+            description: 'Українські сайти'
+        };
+
+        return menu;
     };
 
-    function findPlayButton() {
-        var btns = document.querySelectorAll('button, .button, .selector');
+    var origLaunch = Lampa.Manifest.plugins.onContextLauch;
 
-        for (var i = 0; i < btns.length; i++) {
-            var t = btns[i].innerText || '';
-            if (t.indexOf('Див') !== -1 || t.indexOf('Play') !== -1) return btns[i];
-        }
+    Lampa.Manifest.plugins.onContextLauch = function(object){
 
-        return null;
-    }
+        if(object && object.name === 'UA Online'){
 
-    function insertButton() {
-        if (document.querySelector('.ua-online-btn')) return;
+            var title = object.movie.title || object.movie.name || '';
 
-        var play = findPlayButton();
-        if (!play) return;
-
-        var titleEl = document.querySelector('.full__title,h1');
-        var title = titleEl ? titleEl.textContent : '';
-
-        var btn = Lampa.Template.get('button', {
-            title: 'UA Online',
-            description: 'Пошук українською',
-            icon: settings.icon
-        });
-
-        btn.classList.add('ua-online-btn');
-
-        btn.addEventListener('click', function () {
             Lampa.Input.edit({
-                title: 'Пошук UA',
-                value: title,
-                free: true,
-                nosave: true
-            }, function (query) {
-                if (!query) return;
+                title:'Пошук',
+                value:title,
+                free:true,
+                nosave:true
+            },function(q){
+
+                if(!q) return;
 
                 Lampa.Select.show({
-                    title: 'Де шукати?',
-                    items: settings.sources,
-                    onSelect: function (src) {
+                    title:'UA Online',
+                    items:sources,
+                    onSelect:function(a){
                         Lampa.Browser.open({
-                            url: src.url + encodeURIComponent(query),
-                            title: src.title
+                            url:a.url + encodeURIComponent(q),
+                            title:a.title
                         });
                     }
                 });
             });
-        });
 
-        play.parentNode.insertBefore(btn, play.nextSibling);
-    }
+            return;
+        }
 
-    setInterval(function () {
-        if (!window.Lampa) return;
-        insertButton();
-    }, 800);
-
-    setTimeout(function () {
-        if (window.Lampa) Lampa.Noty.show('UA Online активний');
-    }, 1500);
+        if(origLaunch) origLaunch.apply(this,arguments);
+    };
 
 })();
