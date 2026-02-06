@@ -3,102 +3,85 @@
 
     const NAME = 'UA + Online FREE';
     const SOURCES = [
-        // 🇺🇦 Твої UA-сайти
         {title: 'UAKino CX', url: 'https://uakino.cx/?s=QUERY'},
         {title: 'UAFLIX', url: 'https://uafix.net/?s=QUERY'},
         {title: 'UASerials', url: 'https://uaserials.com/?s=QUERY'},
         {title: 'Takflix UA', url: 'https://takflix.com/uk/search?q=QUERY'},
-        
-        // 🔥 Безкоштовні HD-балансери (замість платних VIP)
         {title: 'Lumex HD', action: () => Lampa.Source.get('lumex')},
         {title: 'RedHead HD', action: () => Lampa.Source.get('redhead')},
         {title: 'HDrezka Free', action: () => Lampa.Source.get('hdrezka')},
         {title: 'Fan Serials', action: () => Lampa.Source.get('fanserials')}
     ];
 
+    // Фікс для MSX: listener на playlist + multiple containers
+    Lampa.Listener.follow('playlist', function(e) {
+        setTimeout(addButton, 500);
+    });
     Lampa.Listener.follow('full', function(e) {
-        if (e.type == 'complite') {
-            setTimeout(function() {
-                var title = e.data.movie.title || e.data.card.title || '';
-                if (!title) return;
-
-                $('.ua-free-btn').remove();
-
-                var btn = Lampa.Template.get('button', {
-                    title: NAME,
-                    html: '🔥 FREE HD',
-                    href: '',
-                    klass: 'ua-free-btn selector focus'
-                });
-
-                btn.on('hover:enter', function() {
-                    var menu_items = SOURCES.map(source => ({
-                        title: source.title,
-                        action: () => {
-                            if (source.action) {
-                                source.action();
-                            } else {
-                                var query = encodeURIComponent(title);
-                                Lampa.Browser.open({
-                                    url: source.url.replace('QUERY', query),
-                                    title: source.title + ': ' + title
-                                });
-                            }
-                            Lampa.Controller.toggle();
-                        }
-                    }));
-
-                    Lampa.Select.show({
-                        title: '8+ HD джерел (без VIP)',
-                        items: menu_items,
-                        onSelect: (a) => a.action(),
-                        onBack: () => Lampa.Controller.toggle()
-                    });
-                });
-
-                // Адаптовано під Hisense/MSX
-                var containers = [
-                    $('.view--category_full .full-start__buttons'),
-                    $('.view--category_full .full-startbuttons'),
-                    $('.full-start__buttons'),
-                    $('.actions')
-                ];
-                containers.forEach(container => {
-                    if (container.length) container.append(btn);
-                });
-
-                if ($('.ua-free-btn').length) {
-                    Lampa.Noty.show(NAME + ' (' + SOURCES.length + ' джерел) для "' + title + '"');
-                }
-            }, 1500);
-        }
+        if (e.type == 'complite') setTimeout(addButton, 2000);
     });
 
-    // Додати в меню
-    function addMenu() {
-        var item = Lampa.Template.get('menuitem', {
+    function addButton() {
+        var title = $('.info__title').text() || 
+                    $('.view--category_full .full-info__title').text() || 
+                    $('h1').text() || '';
+        if (!title) return;
+
+        $('.ua-free-btn').remove();
+
+        var btn = Lampa.Template.get('button_item', {
             title: NAME,
-            href: 'uafree'
+            icon: '🔥',
+            href: ''
         });
-        $('.menu .menulist').append(item);
+        btn.addClass('ua-free-btn selector');
+
+        btn.on('hover:enter', () => showMenu(title));
+
+        // 5 місць додавання для MSX/Hisense
+        const places = [
+            '.full-start__buttons',
+            '.full-startbuttons', 
+            '.actions__body',
+            '.view--playlist .actions',
+            '.full-actions'
+        ];
+        
+        places.forEach(selector => {
+            $(selector).append(btn.clone(true));
+        });
+
+        Lampa.Noty.show('🔥 ' + NAME + ' (' + SOURCES.length + ') для ' + title);
     }
 
+    function showMenu(title) {
+        const items = SOURCES.map(s => ({
+            title: s.title,
+            action: () => {
+                if (s.action) s.action();
+                else {
+                    const query = encodeURIComponent(title);
+                    Lampa.Browser.open({
+                        url: s.url.replace('QUERY', query),
+                        title: s.title
+                    });
+                }
+                Lampa.Controller.toggle('full');
+            }
+        }));
+
+        Lampa.Select.show({
+            title: 'HD Джерела',
+            items,
+            onBack: () => Lampa.Controller.toggle('full')
+        });
+    }
+
+    // Меню в головному
     Lampa.Component.add('uafree', {
-        component: 'uafree',
         name: NAME,
-        icon: '🔥'
+        url: 'uafree'
     });
 
-    if (window.appready) addMenu();
-    else {
-        Lampa.Listener.follow('app', function(e) {
-            if (e.type == 'ready') addMenu();
-        });
-    }
-
-    // Дебаг для Hisense
-    setTimeout(() => {
-        Lampa.Noty.show('🔥 ' + NAME + ' завантажено! (' + SOURCES.length + ' HD джерел)');
-    }, 2000);
-
+    Lampa.Noty.show('🔥 ' + NAME + ' активовано!');
 })();
