@@ -1,10 +1,31 @@
 (function() {
     'use strict';
 
+    // Функція відкриття плеєра (спроба парсингу)
+    function playStream(url, title) {
+        var network = new Lampa.Reguest();
+        Lampa.Noty.show('⏳ Шукаю плеєр...');
+        
+        // Тут ми просто відкриваємо сторінку у Web-режимі Лампи (найстабільніше для MSX)
+        // Бо парсити кожен сайт окремо - це 1000 строк коду
+        Lampa.Component.add('ua_web_player', {
+            url: url,
+            title: title,
+            component: 'web_player', // Використовуємо вбудований браузер-плеєр
+            onBack: () => Lampa.Controller.toggle('full')
+        });
+        Lampa.Activity.push({
+            url: url,
+            title: title,
+            component: 'web', // Відкриває сайт всередині Лампи (не викидає)
+            page: 1
+        });
+    }
+
     function addUAButton(object) {
         if ($('.ua-compact-btn').length > 0) return;
 
-        // Компактна кнопка (стиль як у Трейлер)
+        // Кнопка (твоя гарна версія)
         var btn = $(`
             <div class="full-start__item full-start__item--ua selector focus ua-compact-btn" style="width: auto; min-width: 100px;">
                 <div class="full-start__icon" style="background: linear-gradient(45deg, #ff4757, #ff6b7a); border-radius: 50%; padding: 5px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
@@ -16,13 +37,15 @@
 
         btn.on('hover:enter click', function() {
             var title = (object.movie.title || object.card.title || '').trim();
+            var query = encodeURIComponent(title);
+            
             var items = [
-                {title: 'UAKino', url: 'https://uakino.cx/?s='},
-                {title: 'UAFLIX', url: 'https://uafix.net/?s='},
-                {title: 'UASerials', url: 'https://uaserials.com/?s='},
-                {title: 'Takflix', url: 'https://takflix.com/uk/search?q='},
-                {title: 'Lumex HD', action: 'lumex'},
-                {title: 'RedHead HD', action: 'redhead'}
+                {title: 'UAKino (Вбудовано)', url: 'https://uakino.cx/?s=' + query, mode: 'web'},
+                {title: 'UAFLIX (Вбудовано)', url: 'https://uafix.net/?s=' + query, mode: 'web'},
+                {title: 'UASerials (Вбудовано)', url: 'https://uaserials.com/?s=' + query, mode: 'web'},
+                {title: 'Takflix (Браузер)', url: 'https://takflix.com/uk/search?q=' + query, mode: 'link'},
+                {title: '🔥 Lumex HD (Плеєр)', action: 'lumex'},
+                {title: '🔥 RedHead HD (Плеєр)', action: 'redhead'}
             ];
 
             Lampa.Select.show({
@@ -31,13 +54,20 @@
                     title: s.title,
                     action: () => {
                         if (s.action) {
-                            Lampa.Controller.toggle('content'); 
-                            Lampa.Source.get(s.action);
+                            Lampa.Controller.toggle('content');
+                            Lampa.Source.get(s.action); // Відкриває рідний парсер
+                        } else if (s.mode === 'web') {
+                            // Відкриваємо сайт ВСЕРЕДИНІ Лампи (Web Component)
+                            Lampa.Activity.push({
+                                url: s.url,
+                                title: s.title,
+                                component: 'web',
+                                page: 1
+                            });
                         } else {
-                            var url = s.url + encodeURIComponent(title);
-                            // Універсальний відкривач для MSX/Browser
-                            if (typeof Lampa.Android !== 'undefined') Lampa.Android.open(url);
-                            else window.open(url, '_blank');
+                            // Для Takflix - зовнішній браузер (надійніше)
+                            if (typeof Lampa.Android !== 'undefined') Lampa.Android.open(s.url);
+                            else window.open(s.url, '_blank');
                         }
                     }
                 })),
@@ -45,13 +75,9 @@
             });
         });
 
-        // Вставка (тільки в кнопки)
         var container = $('.full-start__buttons');
         if (!container.length) container = $('.full-start-new__buttons');
-        
-        if (container.length) {
-            container.prepend(btn);
-        }
+        if (container.length) container.prepend(btn);
     }
 
     Lampa.Listener.follow('full', function(e) {
@@ -59,7 +85,4 @@
             setTimeout(() => addUAButton(e.data), 1000);
         }
     });
-
-    console.log('🔥 UA Compact v4 Ready');
 })();
-
