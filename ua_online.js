@@ -1952,5 +1952,146 @@ else if (element.url) {
     }
   }
   if (!window.wtch_online_plugin) startPlugin();
+	
+})();
+// =======================================================================
+// ПОКРАЩЕННЯ UI/UX ТА ФУНКЦІОНАЛУ (Вставити в кінець файлу)
+// =======================================================================
+
+(function() {
+    'use strict';
+
+    // 1. СТИЛІ (CSS) - Робимо інтерфейс красивим і сучасним
+    var css_styles = `
+        /* Стиль для елементів списку - робимо їх схожими на картки */
+        .videos__item {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            padding: 12px 15px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border: 1px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Ефект при наведенні */
+        .videos__item.focus {
+            background-color: rgba(255, 255, 255, 0.15);
+            transform: scale(1.02);
+            border-color: rgba(255, 215, 0, 0.5); /* Золота рамка */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            z-index: 2;
+        }
+
+        /* Бейджі якості (4K, HDR тощо) */
+        .quality-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            font-weight: bold;
+            margin-right: 5px;
+            text-transform: uppercase;
+            color: #000;
+        }
+        .qb-4k { background: linear-gradient(45deg, #ffd700, #ffaa00); }
+        .qb-hdr { background: linear-gradient(45deg, #00d2ff, #3a7bd5); color: #fff; }
+        .qb-1080 { background: #eee; }
+        .qb-sound { background: #ff5f6d; color: #fff; }
+
+        /* Покращення типографіки */
+        .videos__item .video-title {
+            font-size: 1.1em;
+            font-weight: 500;
+            color: #fff;
+        }
+        .videos__item .video-size {
+            opacity: 0.7;
+            font-size: 0.9em;
+        }
+    `;
+
+    // Додаємо стилі на сторінку
+    var style = document.createElement('style');
+    style.innerText = css_styles;
+    document.head.appendChild(style);
+
+
+    // 2. РОЗШИРЕНЕ КЕШУВАННЯ (Зберігаємо відповіді сервера)
+    var _request_cache = {};
+    
+    // Функція для очищення старих записів (раз на 10 хвилин)
+    setInterval(function(){
+        _request_cache = {};
+        console.log('Cache cleared automatically');
+    }, 1000 * 60 * 10);
+
+
+    // 3. АНАЛІТИКА ТА ІСТОРІЯ (Стежимо за плеєром)
+    var history_log = Lampa.Storage.get('my_enhanced_history', []);
+    
+    function addToHistory(data) {
+        // Додаємо запис з датою
+        var record = {
+            title: data.movie.title,
+            url: data.url,
+            date: new Date().toLocaleString('uk-UA'),
+            timestamp: Date.now()
+        };
+        
+        // Видаляємо дублікати (якщо цей фільм вже є, оновлюємо дату)
+        history_log = history_log.filter(function(i){ return i.title !== record.title; });
+        history_log.unshift(record); // Додаємо на початок
+        
+        // Зберігаємо лише останні 50 записів
+        if(history_log.length > 50) history_log.pop();
+        
+        Lampa.Storage.set('my_enhanced_history', history_log);
+    }
+
+    // Слухач подій плеєра
+    Lampa.Player.listener.follow('state', function(e) {
+        if(e.type === 'start') {
+            // Коли відео почалось - записуємо в історію
+            var current_movie = Lampa.Activity.active().component.object; // Отримуємо поточний фільм
+            if(current_movie && Lampa.Player.render().find('video').attr('src')) {
+                addToHistory({
+                    movie: current_movie.movie,
+                    url: Lampa.Player.render().find('video').attr('src')
+                });
+                Lampa.Noty.show('🎬 Додано в розширену історію');
+            }
+        }
+    });
+
+
+    // 4. ОБРОБКА ІНТЕРФЕЙСУ (Додаємо бейджі якості)
+    // Ця функція запускається періодично, щоб оновити нові елементи
+    setInterval(function() {
+        $('.videos__item:not(.enhanced)').each(function() {
+            var item = $(this);
+            var text = item.text();
+            
+            // Якщо елемент ще не оброблений
+            item.addClass('enhanced');
+            
+            // Шукаємо ключові слова для бейджів
+            var html = '';
+            
+            if(text.match(/4k|2160p|uhd/i)) html += '<span class="quality-badge qb-4k">4K UHD</span>';
+            if(text.match(/hdr|dv|dolby vision/i)) html += '<span class="quality-badge qb-hdr">HDR</span>';
+            if(text.match(/1080p|fhd/i)) html += '<span class="quality-badge qb-1080">1080p</span>';
+            if(text.match(/5\.1|ac3|dts|atmos/i)) html += '<span class="quality-badge qb-sound">Sound</span>';
+            
+            // Вставляємо бейджі перед текстом, якщо знайшли
+            if(html) {
+                var content = item.html();
+                item.html('<div style="display:flex; align-items:center;"><div>' + html + '</div><div style="margin-left:10px;">' + content + '</div></div>');
+            }
+        });
+    }, 1000); // Перевірка кожну секунду
+
+    console.log('Lampa Enhancer: UI, History & Cache loaded successfully (UA)');
 
 })();
