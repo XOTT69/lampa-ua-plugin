@@ -6,16 +6,6 @@
     localhost: 'http://wtch.ch/',
     apn: ''
   };
-  
-  // Вибираємо випадковий, щоб розподілити навантаження
-  var host = servers[Math.floor(Math.random() * servers.length)];
-
-  var Defined = {
-    api: 'lampac',
-    localhost: host,
-    apn: ''
-  };
-
 
   var balansers_with_search;
   
