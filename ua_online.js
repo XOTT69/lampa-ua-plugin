@@ -3,7 +3,8 @@
 
   // Список серверів: свій (якщо буде), потім публічні
   var servers = [
-      'https://my-lampac.onrender.com/', // Твій Render (якщо запрацює)
+      'http://lampac.sh//',               // Твій Render (якщо запрацює)
+	  'http://lite.lampa.mx/',           // ТОП-1: Максимум джерел (Rezka!)
       'http://lampa.mx/',                // Найкращий публічний
       'http://cub.red/',                 // Запасний
       'http://wtch.ch/'                  // Твій старий
