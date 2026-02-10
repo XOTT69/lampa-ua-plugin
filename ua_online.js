@@ -2,15 +2,13 @@
   'use strict';
 
   // --- НАЛАШТУВАННЯ СЕРВЕРІВ ---
-  // Тільки перевірені, робочі публічні сервери з парсерами.
   var servers = [
-      'http://wtch.ch/',                 // Основний (Швейцарія) - Найстабільніший
-      'http://lite.lampa.mx/',           // Офіційний резерв
-      'http://cub.red/',                 // Резерв №2
-      'http://lampac.sh/'                // Резерв №3
+      'http://wtch.ch/',
+      'http://lite.lampa.mx/',
+      'http://cub.red/',
+      'http://lampac.sh/'
   ];
 
-  // Вибираємо випадковий сервер зі списку, щоб розподілити навантаження
   var host = servers[Math.floor(Math.random() * servers.length)];
 
   var Defined = {
@@ -19,31 +17,35 @@
     apn: ''
   };
 
-  // --- ФУНКЦІЯ ЗАПУСКУ ---
   function start() {
-    // 1. Показуємо в меню, який сервер зараз працює
+    // 1. Інформація про сервер
     Lampa.Settings.listener.follow('open', function(e) {
       if (e.name == 'main') {
-        var item = $('<div class="settings-param selector" data-type="button" data-static="true"><div class="settings-param__name">Сервер</div><div class="settings-param__value">' + host + ' (ОК)</div></div>');
+        var item = $('<div class="settings-param selector" data-type="button" data-static="true"><div class="settings-param__name">Сервер</div><div class="settings-param__value">' + host + '</div></div>');
         $('.settings-param:eq(0)').after(item);
       }
     });
 
-    // 2. Примусово вимикаємо вбудовані торренти (вони часто глючать в Лайт)
+    // 2. 🔥 НАЛАШТУВАННЯ ДЖЕРЕЛ (Щоб прибрати VIP)
+    // Вимикаємо платні джерела з видачі, якщо немає підписки
+    Lampa.Storage.set('source_filmax_vip', 'false'); 
+    
+    // Ставимо пріоритет на безкоштовні (Rezka, Collaps)
+    // Це змусить Лампу показувати їх ПЕРШИМИ у списку
+    Lampa.Storage.set('online_proxy_all', 'true'); // Вмикає проксі для всіх
+    
+    // 3. Відключаємо торренти (щоб не заважали)
     Lampa.Params.select('torrents_use', '0');
     Lampa.Params.select('proxy_use', '0');
     
-    // 3. Кажемо Лампі, що ми "в системі"
     window.lampac_injected = true;
   }
 
-  // --- ЗАВАНТАЖЕННЯ СТИЛІВ ---
   function addStyle() {
     var css = '.lampac-badge{background: #2a3c50; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; margin-left: 5px;}';
     Lampa.Utils.putStyle(css);
   }
 
-  // --- ІНІЦІАЛІЗАЦІЯ ---
   if (window.appready) {
     addStyle();
     start();
@@ -56,14 +58,18 @@
     });
   }
 
-  // --- ПІДКЛЮЧЕННЯ ДЖЕРЕЛ (ПЛАГІНИ) ---
+  // --- 🔥 МАКСИМАЛЬНИЙ НАБІР БЕЗКОШТОВНИХ ПЛАГІНІВ ---
   var components = [
-    // Головний модуль сервера (відповідає за пошук)
     host + 'main.js',
     
-    // Додаткові джерела (Rezka, Filmix, Eneyida) - завантажуємо напряму, щоб точно працювало
-    'http://bwa.to/plugins/online.js',   // Універсальний плагін (якщо сервер не віддасть свої)
-    'http://lampa.stream/modss'          // Резервний мод
+    // BWA - Найкращий для безкоштовного кіно
+    'http://bwa.to/plugins/online.js',
+    
+    // Додатковий мод, який часто відкриває закрите
+    'http://lampa.stream/modss', 
+    
+    // Парсер для Rezka (щоб точно працювало без VIP)
+    'https://raw.githubusercontent.com/nb557/plugins/master/rezka.js' 
   ];
 
   components.forEach(function(url) {
