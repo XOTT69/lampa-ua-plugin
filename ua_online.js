@@ -3,8 +3,7 @@
 
   // --- НАЛАШТУВАННЯ СЕРВЕРІВ ---
   var servers = [
-      'http://wtch.ch/',
-      'http://lite.lampa.mx/',
+      'http://wtch.ch/', 
       'http://cub.red/',
       'http://lampac.sh/'
   ];
@@ -18,7 +17,6 @@
   };
 
   function start() {
-    // 1. Інформація про сервер
     Lampa.Settings.listener.follow('open', function(e) {
       if (e.name == 'main') {
         var item = $('<div class="settings-param selector" data-type="button" data-static="true"><div class="settings-param__name">Сервер</div><div class="settings-param__value">' + host + '</div></div>');
@@ -26,15 +24,11 @@
       }
     });
 
-    // 2. 🔥 НАЛАШТУВАННЯ ДЖЕРЕЛ (Щоб прибрати VIP)
-    // Вимикаємо платні джерела з видачі, якщо немає підписки
-    Lampa.Storage.set('source_filmax_vip', 'false'); 
-    
-    // Ставимо пріоритет на безкоштовні (Rezka, Collaps)
-    // Це змусить Лампу показувати їх ПЕРШИМИ у списку
-    Lampa.Storage.set('online_proxy_all', 'true'); // Вмикає проксі для всіх
-    
-    // 3. Відключаємо торренти (щоб не заважали)
+    // 🔥 ПРИМУСОВЕ ВКЛЮЧЕННЯ PROXY ДЛЯ REZKA
+    Lampa.Storage.set('proxy_rezka', 'true'); 
+    Lampa.Storage.set('rezka_ua', 'true'); // Якщо ти в Україні
+
+    // Вимикаємо зайве
     Lampa.Params.select('torrents_use', '0');
     Lampa.Params.select('proxy_use', '0');
     
@@ -58,18 +52,18 @@
     });
   }
 
-  // --- 🔥 МАКСИМАЛЬНИЙ НАБІР БЕЗКОШТОВНИХ ПЛАГІНІВ ---
+  // --- 🔥 НАЙКРАЩІ ПЛАГІНИ 2026 ---
   var components = [
     host + 'main.js',
     
-    // BWA - Найкращий для безкоштовного кіно
-    'http://bwa.to/plugins/online.js',
+    // 1. Online Mod від NB557 (ТОП для Rezka)
+    'https://nb557.github.io/plugins/online_mod.js',
     
-    // Додатковий мод, який часто відкриває закрите
-    'http://lampa.stream/modss', 
+    // 2. MODSS (Резерв, якщо перший не спрацює)
+    'http://lampa.stream/modss',
     
-    // Парсер для Rezka (щоб точно працювало без VIP)
-    'https://raw.githubusercontent.com/nb557/plugins/master/rezka.js' 
+    // 3. Спеціальний фікс для Rezka (якщо інші не бачать)
+    'http://lampa.init.sh/rezka.js' 
   ];
 
   components.forEach(function(url) {
