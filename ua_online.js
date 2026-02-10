@@ -1,11 +1,23 @@
 (function() {
   'use strict';
 
+  // Список серверів: свій (якщо буде), потім публічні
+  var servers = [
+      'https://my-lampac.onrender.com/', // Твій Render (якщо запрацює)
+      'http://lampa.mx/',                // Найкращий публічний
+      'http://cub.red/',                 // Запасний
+      'http://wtch.ch/'                  // Твій старий
+  ];
+  
+  // Вибираємо випадковий, щоб розподілити навантаження
+  var host = servers[Math.floor(Math.random() * servers.length)];
+
   var Defined = {
     api: 'lampac',
-    localhost: 'http://wtch.ch/',
+    localhost: host,
     apn: ''
   };
+
 
   var balansers_with_search;
   
