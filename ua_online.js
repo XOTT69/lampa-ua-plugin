@@ -1951,17 +1951,6 @@ else if (element.url) {
       Lampa.Storage.sync('online_watched_last', 'object_object');
     }
   }
-
-  // --- 🔥 ДОДАТКОВИЙ КОД ДЛЯ БЕЗКОШТОВНИХ ДЖЕРЕЛ ---
-  
-  // 1. Вмикаємо проксі для Резки (щоб не просила VIP)
-  Lampa.Storage.set('proxy_rezka', 'true');
-  
-  // 2. Підключаємо потужний мод NB557 (він дає доступ до Rezka/Collaps без VIP)
-  Lampa.Utils.putScriptAsync(['https://nb557.github.io/plugins/online_mod.js'], function() {});
-  
-  // --- КІНЕЦЬ ДОДАВАННЯ ---
-
   if (!window.wtch_online_plugin) startPlugin();
 
 })();
