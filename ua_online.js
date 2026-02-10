@@ -1,14 +1,11 @@
 (function() {
   'use strict';
 
-  // Список серверів: свій (якщо буде), потім публічні
-  var servers = [
-      'http://lampac.sh//',               // Твій Render (якщо запрацює)
-	  'http://lite.lampa.mx/',           // ТОП-1: Максимум джерел (Rezka!)
-      'http://lampa.mx/',                // Найкращий публічний
-      'http://cub.red/',                 // Запасний
-      'http://wtch.ch/'                  // Твій старий
-  ];
+  var Defined = {
+    api: 'lampac',
+    localhost: 'http://wtch.ch/',
+    apn: ''
+  };
   
   // Вибираємо випадковий, щоб розподілити навантаження
   var host = servers[Math.floor(Math.random() * servers.length)];
